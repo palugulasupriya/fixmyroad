@@ -1,0 +1,48 @@
+import { Report } from '@/lib/types';
+
+export const locationOptions = [
+  'Main Street',
+  'Market Avenue',
+  'Oak Road',
+  'School Lane',
+  'Cedar Blvd',
+  'Maple Drive',
+  'River Street',
+  'Central Plaza',
+];
+
+export const initialReports: Report[] = [
+  {
+    id: 'report-1',
+    location: 'Main Street',
+    description: 'Large pothole near the bus stop causing traffic slowdown.',
+    photoUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=900&q=80',
+    severity: 'high',
+    status: 'Assigned',
+    createdAt: '2026-10-09T09:00:00.000Z',
+    updatedAt: '2026-10-09T10:30:00.000Z',
+    aiVerified: true,
+  },
+  {
+    id: 'report-2',
+    location: 'School Lane',
+    description: 'Small pothole near the school entrance.',
+    photoUrl: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
+    severity: 'medium',
+    status: 'Under Review',
+    createdAt: '2026-10-09T08:15:00.000Z',
+    updatedAt: '2026-10-09T09:40:00.000Z',
+    aiVerified: true,
+  },
+  {
+    id: 'report-3',
+    location: 'Cedar Blvd',
+    description: 'Road damage after recent rain, needs inspection.',
+    photoUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=900&q=80',
+    severity: 'low',
+    status: 'Submitted',
+    createdAt: '2026-10-09T07:00:00.000Z',
+    updatedAt: '2026-10-09T07:15:00.000Z',
+    aiVerified: true,
+  },
+];
