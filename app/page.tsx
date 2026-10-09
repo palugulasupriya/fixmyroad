@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Role, Report, Severity, Status } from '@/lib/types';
+import { Report, Role, Status } from '@/lib/types';
 import { locationOptions } from '@/lib/mockData';
 
 const initialForm = {
   location: 'Main Street',
   description: '',
-  photoUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=900&q=80',
+  photoUrl: '',
 };
 
 export default function HomePage() {
@@ -16,6 +16,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(initialForm);
   const [statusMessage, setStatusMessage] = useState('');
+  const [monsoonAlert, setMonsoonAlert] = useState(false);
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => report.status !== 'Resolved' || role === 'officer');
@@ -37,15 +38,49 @@ export default function HomePage() {
     loadReports();
   }, []);
 
+  const detectLocationFromImage = async (file: File) => {
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const exif = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(`https://api.exiftool.com/v1?image=${encodeURIComponent(dataUrl)}`));
+      const exifData = await exif.json();
+      const location = exifData?.location || 'Main Street';
+      return { photoUrl: dataUrl, location };
+    } catch {
+      return { photoUrl: '', location: form.location };
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const imageData = await detectLocationFromImage(file);
+    setForm((current) => ({
+      ...current,
+      photoUrl: imageData.photoUrl || current.photoUrl,
+      location: imageData.location || current.location,
+    }));
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setStatusMessage('Checking the image with AI...');
+    setStatusMessage('Checking the image with AI and weather context...');
 
     try {
       const aiResponse = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location: form.location, description: form.description, photoUrl: form.photoUrl }),
+        body: JSON.stringify({
+          location: form.location,
+          description: form.description,
+          photoUrl: form.photoUrl,
+        }),
       });
       const aiData = await aiResponse.json();
 
@@ -58,12 +93,18 @@ export default function HomePage() {
           photoUrl: form.photoUrl,
           severity: aiData.severity,
           aiVerified: aiData.isPothole,
+          monsoonPriority: aiData.monsoonPriority,
         }),
       });
 
       const createdReport = await result.json();
       setReports((current) => [createdReport, ...current]);
-      setStatusMessage(`Report submitted. Severity: ${aiData.severity}.`);
+      setMonsoonAlert(Boolean(aiData.monsoonPriority));
+      setStatusMessage(
+        aiData.monsoonPriority
+          ? `Monsoon priority alert: report submitted with ${aiData.severity.toUpperCase()} severity.`
+          : `Report submitted. Severity: ${aiData.severity}.`
+      );
       setForm(initialForm);
     } catch (error) {
       setStatusMessage('Something went wrong while submitting the report.');
@@ -91,7 +132,7 @@ export default function HomePage() {
           <p className="text-sm uppercase tracking-[0.2em] text-emerald-100">Public Works</p>
           <h1 className="mt-3 text-4xl font-bold">FixMyRoad</h1>
           <p className="mt-2 max-w-2xl text-emerald-50">
-            AI-assisted pothole reporting for citizens and municipal officers.
+            AI-assisted pothole reporting with monsoon prioritization.
           </p>
         </header>
 
@@ -121,13 +162,12 @@ export default function HomePage() {
 
               <div className="space-y-5">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Photo</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Upload photo</label>
                   <input
-                    type="url"
-                    value={form.photoUrl}
-                    onChange={(event) => setForm({ ...form, photoUrl: event.target.value })}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
                     className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-500"
-                    placeholder="https://example.com/pothole.jpg"
                   />
                 </div>
 
@@ -165,7 +205,15 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {statusMessage && <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">{statusMessage}</p>}
+              {statusMessage && (
+                <p
+                  className={`mt-4 rounded-xl p-3 text-sm ${
+                    monsoonAlert ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {statusMessage}
+                </p>
+              )}
             </form>
 
             <aside className="rounded-2xl bg-slate-900 p-6 text-white shadow-lg">
@@ -181,6 +229,9 @@ export default function HomePage() {
                       <p className="font-medium">{report.location}</p>
                       <p className="mt-1 text-sm text-slate-300">{report.status}</p>
                       <p className="mt-1 text-xs text-slate-400">Severity: {report.severity}</p>
+                      {report.monsoonPriority && (
+                        <p className="mt-2 text-xs font-semibold text-amber-300">Monsoon Priority</p>
+                      )}
                     </div>
                   ))
                 )}
@@ -204,7 +255,9 @@ export default function HomePage() {
               ) : (
                 reports.map((report) => (
                   <div key={report.id} className="rounded-2xl border border-slate-200 p-4">
-                    <img src={report.photoUrl} alt={report.location} className="h-40 w-full rounded-xl object-cover" />
+                    {report.photoUrl && (
+                      <img src={report.photoUrl} alt={report.location} className="h-40 w-full rounded-xl object-cover" />
+                    )}
                     <div className="mt-3 flex items-center justify-between">
                       <p className="font-semibold">{report.location}</p>
                       <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
@@ -213,6 +266,12 @@ export default function HomePage() {
                     </div>
 
                     <p className="mt-2 text-sm text-slate-600">{report.description || 'No description provided.'}</p>
+
+                    {report.monsoonPriority && (
+                      <p className="mt-2 rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                        Monsoon priority
+                      </p>
+                    )}
 
                     <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-slate-500">
                       Status

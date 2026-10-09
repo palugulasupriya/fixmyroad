@@ -22,6 +22,9 @@ export async function POST(request: Request) {
     createdAt: now,
     updatedAt: now,
     aiVerified: Boolean(body.aiVerified),
+    monsoonPriority: Boolean(body.monsoonPriority),
+    latitude: body.latitude,
+    longitude: body.longitude,
   };
 
   reports.unshift(report);

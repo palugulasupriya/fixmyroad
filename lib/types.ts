@@ -12,4 +12,7 @@ export interface Report {
   createdAt: string;
   updatedAt: string;
   aiVerified: boolean;
+  monsoonPriority: boolean;
+  latitude?: number;
+  longitude?: number;
 }

@@ -22,6 +22,9 @@ export const initialReports: Report[] = [
     createdAt: '2026-10-09T09:00:00.000Z',
     updatedAt: '2026-10-09T10:30:00.000Z',
     aiVerified: true,
+    monsoonPriority: true,
+    latitude: 12.9716,
+    longitude: 77.5946,
   },
   {
     id: 'report-2',
@@ -33,6 +36,9 @@ export const initialReports: Report[] = [
     createdAt: '2026-10-09T08:15:00.000Z',
     updatedAt: '2026-10-09T09:40:00.000Z',
     aiVerified: true,
+    monsoonPriority: false,
+    latitude: 12.9752,
+    longitude: 77.5917,
   },
   {
     id: 'report-3',
@@ -44,5 +50,8 @@ export const initialReports: Report[] = [
     createdAt: '2026-10-09T07:00:00.000Z',
     updatedAt: '2026-10-09T07:15:00.000Z',
     aiVerified: true,
+    monsoonPriority: true,
+    latitude: 12.9788,
+    longitude: 77.6098,
   },
 ];
